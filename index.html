@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDDK Uyumlu Tasarruf Finansman Hesaplayıcı</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --warning-bg: #fff7ed;
+            --warning-text: #c2410c;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #3b82f6;
+                --primary-dark: #60a5fa;
+                --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                --glass-bg: rgba(30, 41, 59, 0.85);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+                --text-main: #f1f5f9;
+                --text-muted: #94a3b8;
+                --warning-bg: #431407;
+                --warning-text: #fdba74;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-main);
+            position: relative;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            transition: height 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .mode-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .mode-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .mode-option.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .toggle-label {
+            position: absolute;
+            right: 0;
+            top: 0;
+            font-size: 0.75rem;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .toggle-label:hover {
+            text-decoration: underline;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--secondary);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button.btn-secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            margin-top: 16px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .results {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--glass-border);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .result-item span:first-child {
+            color: var(--text-muted);
+        }
+
+        .result-item span:last-child {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .highlight {
+            background: rgba(37, 99, 235, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .highlight h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .highlight .value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .highlight .date-value {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .warning-box {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 16px;
+            border-left: 4px solid #f97316;
+            display: none;
+        }
+
+        .disclaimer {
+            margin-top: 24px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.4;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 15px;
+        }
+
+        /* Premium Social Button */
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(29, 161, 242, 0.1);
+            color: #1da1f2;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .social-link:hover {
+            background: rgba(29, 161, 242, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .social-link svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Tasarruf Finansman Hesaplayıcı</h1>
+            <p class="subtitle">BDDK Uyumlu Finansman Planı</p>
+        </header>
+
+        <div class="mode-selector">
+            <div class="mode-option active" onclick="setMode('sirali')" id="btn-sirali">Sıralı Sistem</div>
+            <div class="mode-option" onclick="setMode('cekilisli')" id="btn-cekilisli">Çekilişli Sistem</div>
+        </div>
+
+        <div class="calculator-form">
+            <div class="input-group">
+                <label for="sozlesmeTutari">Sözleşme Tutarı (TL)</label>
+                <input type="text" id="sozlesmeTutari" placeholder="Örn: 1.000.000" oninput="formatCurrency(this)">
+            </div>
+
+            <div class="input-group">
+                <label for="pesinat">Peşinat Tutarı (TL)</label>
+                <input type="text" id="pesinat" placeholder="Örn: 200.000" oninput="formatCurrency(this)">
+            </div>
+
+            <!-- Dynamic Input Group -->
+            <div class="input-group">
+                <label id="dynamicLabel" for="dynamicInput">Aylık Taksit (TL)</label>
+                <span class="toggle-label" onclick="toggleInputMethod()" id="toggleBtn">Vade ile Hesapla ⇄</span>
+                <input type="text" id="dynamicInput" placeholder="Örn: 10.000" oninput="formatDynamic(this)">
+                <div id="vadeError" class="error-message">Hatalı giriş.</div>
+            </div>
+
+            <div class="input-group">
+                <label for="orgUcretiOrani">Organizasyon Ücreti Oranı (%)</label>
+                <input type="number" id="orgUcretiOrani" value="8" step="0.1" min="0" max="20">
+            </div>
+
+            <!-- Interim Payment Section (Optional) -->
+            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 20px;">
+                <label style="font-size: 0.8rem; color: var(--primary); margin-bottom: 8px; display: block;">Opsiyonel:
+                    Ara Ödeme (Ek Ödeme)</label>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label for="araOdeme">Ara Ödeme Tutarı (TL)</label>
+                    <input type="text" id="araOdeme" placeholder="Örn: 50.000" oninput="formatCurrency(this)">
+                </div>
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label for="araOdemeAy">Ara Ödeme Zamanı (Kaçıncı Ay?)</label>
+                    <input type="number" id="araOdemeAy" placeholder="Örn: 10" min="1">
+                </div>
+            </div>
+
+            <button onclick="hesapla()">HESAPLA</button>
+        </div>
+
+        <div id="sonuclar" class="results">
+            <div class="result-item">
+                <span>Yöntem</span>
+                <span id="resYontem">-</span>
+            </div>
+            <div class="result-item">
+                <span>Toplam Vade (Ay)</span>
+                <span id="resVade">-</span>
+            </div>
+            <div class="result-item">
+                <span>Aylık Taksit</span>
+                <span id="resTaksit">-</span>
+            </div>
+            <div class="result-item" id="row-grup-kodu" style="display:none;">
+                <span>Tahmini Grup Müşteri Sayısı</span>
+                <span id="resGrupSayisi">-</span>
+            </div>
+            <div class="result-item">
+                <span>Peşinat Oranı</span>
+                <span id="resPesinatOran">-</span>
+            </div>
+            <div class="result-item">
+                <span>Organizasyon Ücreti</span>
+                <span id="resOrgUcreti">-</span>
+            </div>
+
+            <div class="warning-box" id="duration-warning">
+                <strong>Uyarı:</strong> Hesaplanan vade çok yüksek (120 aydan fazla). Lütfen daha yüksek bir taksit
+                tutarı giriniz veya vadeyi kısaltınız.
+            </div>
+
+            <div class="warning-box" id="interim-month-warning"
+                style="display:none; border-left-color: #ef4444; background: #fff1f2; color: #be123c;">
+                <strong>Hata:</strong> Ara ödeme ayı, toplam vadeden büyük olamaz.
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--glass-border); margin:12px 0;">
+
+            <div class="highlight">
+                <h3 id="resTeslimLabel">Kesin Teslimat Tarihi</h3>
+                <div class="value" id="resTeslimAy" style="font-size: 1.5rem; color: var(--primary);">X. Ay</div>
+                <div class="date-value" id="resTeslimTarih"
+                    style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">...</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top:4px;" id="resTeslimNote">Minimum
+                    150 gün + 5 taksit kuralı dahildir.</div>
+            </div>
+
+            <div class="warning-box" id="lottery-warning">
+                <strong>Dikkat:</strong> Çekilişli sistemde erken teslimat şansa bağlıdır. Yukarıdaki süre, çekilişte
+                çıkmamanız durumunda geçerli olan <strong>en geç</strong> teslimat tarihidir (Vadenin %40'ı).
+            </div>
+
+            <div class="warning-box" id="interim-warning"
+                style="border-left-color: #ef4444; background: #fef2f2; color: #991b1b;">
+                <strong>BDDK Kuralı (Madde 21-3):</strong> Ara ödemeler teslimat tarihini öne çekmez. Sadece toplam
+                borcunuzu erken bitirir veya taksit yükünüzü hafifletir.
+            </div>
+
+            <div class="result-item" style="margin-top:16px;">
+                <span>Teslimata Kadar Ödenen</span>
+                <span id="resTeslimataKadar">-</span>
+            </div>
+
+
+        </div>
+
+        <div class="disclaimer">
+            Yasal Uyarı: Bu hesaplama BDDK'nın 30.05.2025 tarihli yönetmeliğindeki formüllere dayalı tahmini bir
+            çalışmadır. Kesin sonuçlar ilgili finansman şirketinin sözleşme şartlarına göre değişebilir.
+        </div>
+
+        <!-- Premium Branding -->
+        <a href="https://twitter.com/haaaruunnn" target="_blank" class="social-link">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
+                </path>
+            </svg>
+            @haaaruunnn
+        </a>
+    </div>
+
+    <script>
+        let currentMode = 'sirali'; // 'sirali' or 'cekilisli'
+        let inputMethod = 'taksit'; // 'taksit' or 'vade'
+
+        // Formatter for display
+        const formatter = new Intl.NumberFormat('tr-TR', {
+            style: 'currency',
+            currency: 'TRY',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        function formatCurrency(input) {
+            // Remove non-digit chars
+            let val = input.value.replace(/\D/g, '');
+            if (!val) return;
+
+            // Format with thousand separators
+            input.value = new Intl.NumberFormat('tr-TR').format(parseInt(val));
+        }
+
+        function formatDynamic(input) {
+            // Only format as currency if method is installment
+            if (inputMethod === 'taksit') {
+                formatCurrency(input);
+            }
+            // If vade (months), keep simpler but maybe restrict to digits
+            else {
+                input.value = input.value.replace(/\D/g, '');
+            }
+        }
+
+        function getCleanNumber(id) {
+            const val = document.getElementById(id).value;
+            if (!val) return 0;
+            return parseFloat(val.replace(/\./g, '')) || 0;
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-sirali').className = mode === 'sirali' ? 'mode-option active' : 'mode-option';
+            document.getElementById('btn-cekilisli').className = mode === 'cekilisli' ? 'mode-option active' : 'mode-option';
+            if (document.getElementById('sonuclar').style.display === 'block') hesapla();
+        }
+
+        function toggleInputMethod() {
+            if (inputMethod === 'taksit') {
+                inputMethod = 'vade';
+                document.getElementById('dynamicLabel').innerText = "Vade Sayısı (Ay)";
+                document.getElementById('toggleBtn').innerText = "Taksit Tutarı ile Hesapla ⇄";
+                document.getElementById('dynamicInput').placeholder = "Örn: 24, 36, 120";
+            } else {
+                inputMethod = 'taksit';
+                document.getElementById('dynamicLabel').innerText = "Aylık Taksit (TL)";
+                document.getElementById('toggleBtn').innerText = "Vade ile Hesapla ⇄";
+                document.getElementById('dynamicInput').placeholder = "Örn: 10.000";
+            }
+            document.getElementById('dynamicInput').value = '';
+        }
+
+        function hesapla() {
+            document.getElementById('vadeError').style.display = 'none';
+            document.getElementById('duration-warning').style.display = 'none';
+            document.getElementById('interim-month-warning').style.display = 'none';
+
+            const sozlesme = getCleanNumber('sozlesmeTutari');
+            const pesinat = getCleanNumber('pesinat');
+            const dynamicVal = getCleanNumber('dynamicInput');
+            const orgOran = parseFloat(document.getElementById('orgUcretiOrani').value) || 0;
+
+            const araOdeme = getCleanNumber('araOdeme');
+            const araOdemeAy = parseInt(document.getElementById('araOdemeAy').value) || 0;
+
+            if (sozlesme <= 0 || dynamicVal <= 0) return;
+            if (pesinat >= sozlesme) {
+                alert("Peşinat sözleşme tutarından büyük olamaz.");
+                return;
+            }
+
+            const organizasyonUcreti = sozlesme * (orgOran / 100);
+
+            // Refinement: Include Org Fee in Financing Amount for Installment Calculation
+            // Net Financing = (Contract - Down Payment) + Org Fee
+            const finansmanTutari = (sozlesme - pesinat) + organizasyonUcreti;
+            let taksit = 0;
+            let vade = 0;
+
+            if (inputMethod === 'taksit') {
+                taksit = dynamicVal;
+                vade = Math.ceil(finansmanTutari / taksit);
+            } else {
+                vade = dynamicVal;
+                taksit = finansmanTutari / vade;
+            }
+
+            if (vade <= 0 || taksit <= 0) {
+                document.getElementById('vadeError').style.display = 'block';
+                return;
+            }
+            if (vade > 120) {
+                document.getElementById('duration-warning').style.display = 'block';
+            }
+
+            const pesinatOrani = pesinat / sozlesme;
+            const bazSure = vade * 0.40;
+            let hesaplananSure = 0;
+
+            if (currentMode === 'sirali') {
+                hesaplananSure = bazSure * (1 - pesinatOrani);
+                document.getElementById('resYontem').innerText = "Müşteri Bazlı (Sıralı)";
+                document.getElementById('row-grup-kodu').style.display = 'none';
+                document.getElementById('lottery-warning').style.display = 'none';
+                document.getElementById('resTeslimLabel').innerText = "Tahmini Teslimat Tarihi";
+            } else {
+                hesaplananSure = bazSure;
+                const grupSayisi = Math.ceil(vade * 0.40);
+                document.getElementById('resGrupSayisi').innerHTML = `Min ${grupSayisi} Kişi <span style="font-size:0.75em; color:var(--text-muted); font-weight:400;">(Grup %40 Doluluk Şartı)</span>`;
+                document.getElementById('row-grup-kodu').style.display = 'flex';
+                document.getElementById('resYontem').innerText = "Çekilişli Sistem";
+                document.getElementById('lottery-warning').style.display = 'block';
+                document.getElementById('resTeslimLabel').innerText = "En Geç Teslimat (Talihsiz)";
+            }
+
+            // Interim Payment Logic
+            if (araOdeme > 0) {
+                if (araOdemeAy > vade) {
+                    document.getElementById('interim-month-warning').style.display = 'block';
+                }
+                document.getElementById('interim-warning').style.display = 'block';
+            } else {
+                document.getElementById('interim-warning').style.display = 'none';
+            }
+
+            let finalTeslimAyi = Math.ceil(hesaplananSure);
+            if (finalTeslimAyi < 5) finalTeslimAyi = 5;
+
+            // Calendar Calculation
+            const today = new Date();
+            const deliveryDate = new Date(today.getFullYear(), today.getMonth() + finalTeslimAyi, 1);
+            const dateString = deliveryDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+            // Outputs
+            document.getElementById('resVade').innerText = vade + " Ay";
+            document.getElementById('resTaksit').innerText = formatter.format(taksit);
+            document.getElementById('resPesinatOran').innerText = "%" + (pesinatOrani * 100).toFixed(1);
+            document.getElementById('resPesinatOran').innerText = "%" + (pesinatOrani * 100).toFixed(1);
+            // const organizasyonUcreti = sozlesme * (orgOran / 100); -> Already calculated above
+            document.getElementById('resOrgUcreti').innerText = formatter.format(organizasyonUcreti);
+
+            document.getElementById('resTeslimAy').innerText = finalTeslimAyi + ". Ay";
+            document.getElementById('resTeslimTarih').innerText = "(" + dateString + ")";
+
+            let odenen = pesinat + (finalTeslimAyi * taksit) + organizasyonUcreti;
+
+            // If interim payment happens BEFORE or AT delivery month, add it to 'Paid by Delivery'
+            if (araOdeme > 0 && araOdemeAy > 0 && araOdemeAy <= finalTeslimAyi) {
+                odenen += araOdeme;
+            }
+
+            document.getElementById('resTeslimataKadar').innerText = formatter.format(odenen);
+
+            document.getElementById('sonuclar').style.display = 'block';
+        }
+
+
+    </script>
+
+</body>
+
+</html>
