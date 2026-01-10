@@ -363,6 +363,16 @@
             <button onclick="hesapla()">HESAPLA</button>
         </div>
 
+        <!-- Kısa Vade Uyarısı - Sonuçlar dışında -->
+        <div class="warning-box" id="short-vade-warning"
+            style="display:none; border-left-color: #ef4444; background: #fef2f2; color: #991b1b; margin-top: 20px;">
+            <strong>⛔ BU VADEYLE HESAPLAMA YAPILAMAZ!</strong><br>
+            Çok kısa vade seçtiniz. BDDK min 5 ay + 150 gün kuralı nedeniyle toplam ödeme sözleşme tutarını çok
+            aşar.<br>
+            <strong>Tasarruf finansman mantığına aykırıdır.</strong> Lütfen vadenizi en az <strong>12 ay</strong> olarak
+            belirleyin.
+        </div>
+
         <div id="sonuclar" class="results">
             <div class="result-item">
                 <span>Yöntem</span>
@@ -398,6 +408,7 @@
                 style="display:none; border-left-color: #ef4444; background: #fff1f2; color: #be123c;">
                 <strong>Hata:</strong> Ara ödeme ayı, toplam vadeden büyük olamaz.
             </div>
+
 
             <hr style="border:0; border-top:1px solid var(--glass-border); margin:12px 0;">
 
@@ -509,6 +520,7 @@
             document.getElementById('vadeError').style.display = 'none';
             document.getElementById('duration-warning').style.display = 'none';
             document.getElementById('interim-month-warning').style.display = 'none';
+            document.getElementById('short-vade-warning').style.display = 'none';
 
             const sozlesme = getCleanNumber('sozlesmeTutari');
             const pesinat = getCleanNumber('pesinat');
@@ -546,6 +558,13 @@
             }
             if (vade > 120) {
                 document.getElementById('duration-warning').style.display = 'block';
+            }
+
+            // BLOCK: Vade < 12 ise hesaplama yapma, sadece uyarı göster
+            if (vade < 12) {
+                document.getElementById('short-vade-warning').style.display = 'block';
+                document.getElementById('sonuclar').style.display = 'none'; // Sonuçları gizle
+                return; // Hesaplamayı burada kes
             }
 
             const pesinatOrani = pesinat / sozlesme;
